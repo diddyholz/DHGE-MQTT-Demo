@@ -20,8 +20,7 @@ wifi_password="$3"
 echo "Setting up connection to ESP32"
 
 # Setup serial port
-stty -F "$esp_port" 9600
-stty -F "$esp_port" raw
+stty -F "$esp_port" 9600 raw -echo
 
 # Reroute incoming data from the esp into a temporary file
 rm -f /tmp/esplog
