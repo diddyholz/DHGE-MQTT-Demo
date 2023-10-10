@@ -1,4 +1,10 @@
 #!/bin/bash
+
+# Usage: ./setup.sh /dev/espport [username password]
+#
+# Installs the required dependencies (mosquitto, mosquitto-clients, wget & esptool), flashes the ESP, 
+# creates a mosquitto config and if specified, a password file for mosquitto.
+
 if [[ -z "$1" ]]
 then 
   echo "Usage: $0 /dev/espport [username password]"

@@ -1,4 +1,10 @@
 #!/bin/bash
+
+# Usage: ./run.sh /dev/espport wifi_ssid wifi_password [mqtt_username mqtt_password]
+# 
+# Sets up the ESP32 for connection with the local mosquitto broker and opens an input prompt 
+# to publish MQTT messages to the broker.
+
 if [[ -z "$1" || -z "$2" || -z "$3" ]]
 then 
   echo "Usage: $0 /dev/espport wifi_ssid wifi_password [mqtt_username mqtt_password]"
