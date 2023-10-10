@@ -63,7 +63,6 @@ do
 
   if [[ "$output" == *"Connected to the WiFi network"* ]]
   then
-    echo ""
     echo "ESP successfully connected to WiFi."
     break
   fi
@@ -104,13 +103,14 @@ do
 
   if [[ "$output" == *"Connected to MQTT broker"* ]]
   then
-    echo ""
     echo "ESP successfully connected to the MQTT broker."
     break
   fi
   
   sleep 0.5
 done
+
+echo ""
 
 while true
 do
