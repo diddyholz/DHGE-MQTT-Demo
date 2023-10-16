@@ -120,7 +120,7 @@ void setup() {
   }
 
   // After setting everything up successfully, subscribe to the MQTT topic
-  client.subscribe(mqtt_topic.c_str());
+  client.subscribe(mqtt_topic.c_str(), 1);
 }
 
 void loop() {
