@@ -3,10 +3,13 @@
 #include <stdint.h>
 #include <PubSubClient.h>
 #include <FastLED.h>
+#include <EEPROM.h>
 
 #define LED_PIN 13
 #define NUM_LEDS 3
 #define WIFI_CONNECT_TRIES 10
+#define CONTROL_INT 0xbeef
+#define EEPROM_SIZE sizeof(connection)
 #define wait_for_input() while (Serial.available() == 0) { delay(100); }
 
 WiFiClient wifi_client;
@@ -19,46 +22,101 @@ bool mqtt_connect(String user, String password, String broker, int port);
 void mqtt_input(String &user, String &password, String &topic, String &broker, int &port);
 void callback(char *topic, byte *payload, unsigned int length);
 
+struct connection {
+  int control_int;
+  char wifi_ssid[255];
+  char wifi_password[255];
+  char mqtt_user[255];
+  char mqtt_password[255];
+  char mqtt_topic[255];
+  char mqtt_broker[255];
+  int mqtt_port;
+};
+
 void setup() {
   // Setup serial connection and initialize LEDs
   Serial.begin(9600);
   FastLED.addLeds<WS2812, LED_PIN, GRB>(leds, NUM_LEDS);
 
+  // Read saved connection information
+  EEPROM.begin(EEPROM_SIZE);
+
+  connection con;
+  EEPROM.get(0, con);
+
   String wifi_ssid = "";
   String wifi_password = "";
-  
-  int mqtt_port = 1883;
-  String mqtt_broker = "";
-  String mqtt_topic = "esp/demo";
-  String mqtt_username = "";
+  String mqtt_user = "";
   String mqtt_password = "";
+  String mqtt_topic = "esp/demo";
+  String mqtt_broker = "";
+  int mqtt_port = 1883;
 
-  // WiFi credentials input loop
-  while (true) {
+  // Check if connection exists
+  if (con.control_int != CONTROL_INT) {
+
     wifi_input(wifi_ssid, wifi_password);
+    mqtt_input(mqtt_user, mqtt_password, mqtt_topic, mqtt_broker, mqtt_port);
+  }
+  else {
+    wifi_ssid = String(con.wifi_ssid);
+    wifi_password = String(con.wifi_password);
+    mqtt_user = String(con.mqtt_user);
+    mqtt_password = String(con.mqtt_password);
+    mqtt_topic = String(con.mqtt_topic);
+    mqtt_broker = String(con.mqtt_broker);
+    mqtt_port = con.mqtt_port;
+
+    Serial.println("Existing config:");
+    Serial.println("SSID: " + wifi_ssid);
+    Serial.println("Password: " + wifi_password);
+    Serial.println("Username: " + mqtt_user);
+    Serial.println("Password: " + mqtt_password);
+    Serial.println("Topic: " + mqtt_topic);
+    Serial.println("Broker: " + mqtt_broker);
+    Serial.printf("Port: %d\n", mqtt_port);
+  }
+
+  // WiFi connection loop
+  while (true) {
+    Serial.println("Connecting to WiFi network ...");
 
     if (wifi_connect(wifi_ssid, wifi_password)) {
-      Serial.println("Connected to the WiFi network");
+      Serial.println("Connected to the WiFi network.\n");
       break;
     }
 
     Serial.println("Could not connect to the WiFi network.");
-    Serial.println("Check your wifi credentials.");
+    Serial.println("Check your wifi credentials.\n");
   }
 
-  // MQTT details input loop
+  // MQTT connection loop
   while (true) {
-    mqtt_input(mqtt_username, mqtt_password, mqtt_topic, mqtt_broker, mqtt_port);
-
-    Serial.println("Connecting to mqtt broker");
+    Serial.println("Connecting to mqtt broker ...");
     
-    if (mqtt_connect(mqtt_username, mqtt_password, mqtt_broker, mqtt_port)) {
-      Serial.println("Connected to MQTT broker");
+    if (mqtt_connect(mqtt_user, mqtt_password, mqtt_broker, mqtt_port)) {
+      Serial.println("Connected to MQTT broker.\n");
       break;
     }
 
     Serial.println("Could not connect to the MQTT broker.");
-    Serial.println("Check your broker details.");
+    Serial.println("Check your broker details.\n");
+  }
+
+  // Write connection details if succesfully connected
+  if (con.control_int != CONTROL_INT) {
+    con.control_int = CONTROL_INT;
+    con.mqtt_port = mqtt_port;
+
+    strcpy(con.wifi_ssid, wifi_ssid.c_str());
+    strcpy(con.wifi_password, wifi_password.c_str());
+    strcpy(con.mqtt_user, mqtt_user.c_str());
+    strcpy(con.mqtt_password, mqtt_password.c_str());
+    strcpy(con.mqtt_topic, mqtt_topic.c_str());
+    strcpy(con.mqtt_broker, mqtt_broker.c_str());
+
+    EEPROM.put(0, con);
+    EEPROM.commit();
   }
 
   // After setting everything up successfully, subscribe to the MQTT topic
@@ -122,7 +180,7 @@ void mqtt_input(String &user, String &password, String &topic, String &broker, i
   Serial.printf("Input the broker's port (default: %d): ", port);
   wait_for_input();
   port = Serial.readStringUntil('\n').toInt();
-  Serial.println("Input: " + port);
+  Serial.printf("Input: %d\n", port);
 
   Serial.printf("Input the MQTT topic (default: %s): ", topic);
   wait_for_input();
