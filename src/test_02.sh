@@ -6,6 +6,7 @@
 if [[ -z "$1" ]]
 then
     echo "Usage: $0 IP [user password]"
+    exit 1
 fi
 
 set -e
