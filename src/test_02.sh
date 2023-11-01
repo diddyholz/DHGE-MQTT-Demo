@@ -8,6 +8,8 @@ then
     echo "Usage: $0 IP [user password]"
 fi
 
+set -e
+
 auth=""
 
 if [[ -n "$2" && -n "$3" ]]

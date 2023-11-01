@@ -2,6 +2,8 @@
 
 # This script installs mosquitto clients for Linux and macOS platform.
 
+set -e
+
 uname="$(uname -s)"
 
 echo "Checking dependencies ..."
