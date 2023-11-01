@@ -17,7 +17,8 @@ then
     auth="-u \"$2\" -P \"$3\""
 fi
 
-while true:
+while true
+do
     mosquitto_pub -h $1 -t test -m "TEST" $auth
     sleep 1
 done
