@@ -15,7 +15,7 @@ auth=""
 
 if [[ -n "$2" && -n "$3" ]]
 then
-    auth="-u \"$2\" -P \"$3\""
+    auth="-u $2 -P $3"
 fi
 
 while true

@@ -9,7 +9,7 @@ auth=""
 
 if [[ -n "$1" && -n "$2" ]]
 then
-    auth="-u \"$1\" -P \"$2\""
+    auth="-u $1 -P $2"
 fi
 
 mosquitto_sub -h localhost -t test $auth
