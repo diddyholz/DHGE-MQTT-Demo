@@ -1,11 +1,12 @@
 #!/bin/bash
 
 # Usage: ./flash-esp.sh /dev/espport wifi_ssid wifi_password [mqtt_username mqtt_password]
-#
 # This script flashes the ESP with the Mosquitto demo firmware and sends the configuration data via USB
 
+# Exit script on error
 set -e
 
+# Check if any argument is missing
 if [[ -z "$1" || -z "$2" || -z "$3" ]]
 then 
   echo "Usage: $0 /dev/espport wifi_ssid wifi_password [mqtt_username mqtt_password]"
@@ -14,19 +15,22 @@ fi
 
 echo "Checking dependencies"
 
-# Check required dependencies
+# Variable that holds missing dependencies
 dependencies=""
 
+# Check if the esptool command is not found
 if [[ -z "$(command -v esptool)" ]]
 then
   dependencies+="esptool "
 fi
 
+# Check if the wget command is not found
 if [[ -z "$(command -v wget)" ]]
 then
   dependencies+="wget "
 fi
 
+# Check if any dependencies are missing
 if [[ -n "$dependencies" ]]
 then
   echo "Installing dependencies"
@@ -36,7 +40,7 @@ fi
 echo ""
 echo "Downloading ESP32 binary"
 
-# Download ESP32 binary
+# Download ESP32 binary to firmware.bin
 wget "https://drive.google.com/uc?export=download&id=1BweSlzOMd1uK7cf3e-jm62O6GCs0AYiL" -O firmware.bin
 
 echo ""
@@ -44,26 +48,30 @@ echo "Flashing ESP32 binary"
 echo "If esptool is stuck on connecting, reset the ESP into bootloader mode, by holding \"BOOT\" and pressing \"EN\""
 sleep 5
 
+# Read the esp port argument into a variable
 esp_port="$1"
 
-# Flash binary
+# Flash firmware.bin to esp
 esptool --chip esp32 --port "$1" --baud 460800 --before default_reset --after hard_reset write_flash 0x0 firmware.bin
 
 echo "Flashing complete"
 
+# Save SSID and WiFi password in variables
 wifi_ssid="$2"
 wifi_password="$3"
 
 echo ""
 echo "Setting up connection to ESP32"
 
-# Setup serial port
+# Setup serial port with baud rate 9600 and raw data
 stty -F "$esp_port" 9600 raw -echo
 
 # Reroute incoming data from the esp into a temporary file
 rm -f /tmp/esplog
 cat "$esp_port" > /tmp/esplog &
-trap 'kill $(jobs -p); rm -f /tmp/esplog' EXIT # Cleanup when script exits
+
+# Cleanup when script exits
+trap 'kill $(jobs -p); rm -f /tmp/esplog' EXIT 
 
 echo ""
 echo "Reset the ESP32 now by pressing the \"EN\" button"
@@ -84,6 +92,7 @@ done
 echo ""
 echo "Sending WiFi and MQTT information ..."
 
+# Send SSID and WiFi password to the esp
 echo "$wifi_ssid" > $esp_port
 echo "$wifi_password" > $esp_port
 
